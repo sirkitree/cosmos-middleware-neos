@@ -6,4 +6,5 @@ This project is a Node.js middleware to retrieve the data from the REST API and 
 
 - https://cosmos.network/ - to learn more about cosmos if you're interested.
 - https://cosmos.bigdipper.live/ - is the existing, running Meteor app. This has 4 main blocks on the homepage and those would be the data points I want to start with.
-- https://www.github.com/forbole/big_dipper is the source code of the above app to reverse engineer.
+- https://www.github.com/forbole/big_dipper - source code of the above app to reverse engineer.
+- https://cosmos.network/rpc/ - swagger definition for the Cosmos REST API
