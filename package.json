@@ -1,0 +1,25 @@
+{
+  "name": "cosmos-middleware-neos",
+  "version": "1.0.0",
+  "description": "I'm building a front-end in Neos for some data visualizations and monitoring of the cosmos.network which is a proof of stake blockchain project. They have a REST API and a meteor app that works on top of the API to display various data points. Since Neos cannot directly handle working with a REST API yet, I need to create a middleware (preferably with Node.js but open to other options)  that can get the data from the REST API and provide it's own endpoints to serve up the pieces of data as text which I can then call into Neos using LogiX. The middleware may have to do some calculations on data before serving up certain endpoints, but those calculations are already figured out in the Meteor app, just have to reverse engineer it a little to find them.",
+  "main": "server.js",
+  "dependencies": {
+    "axios": "^0.18.0",
+    "express": "^4.16.4"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sirkitree/cosmos-middleware-neos.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/sirkitree/cosmos-middleware-neos/issues"
+  },
+  "homepage": "https://github.com/sirkitree/cosmos-middleware-neos#readme"
+}
