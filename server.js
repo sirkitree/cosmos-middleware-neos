@@ -73,4 +73,71 @@ app.get('/onlinevotingpower', function (req, res) {
         })
 })
 
+/***
+ * Get consensus height
+ *
+ * Return response
+ **/
+app.get('/consensus/height', function(req, res) {
+  axios.get(RPC + '/dump_consensus_state', {httpsAgent: agent})
+        .then(function (response) {
+          let height = response.data.result.round_state.height;
+          res.send(height.toString());
+        })
+})
+
+/***
+ * Get consensus round
+ *
+ * Return response
+ **/
+app.get('/consensus/round', function(req, res) {
+  axios.get(RPC + '/dump_consensus_state', {httpsAgent: agent})
+        .then(function (response) {
+          let round = response.data.result.round_state.round;
+          res.send(round.toString());
+        })
+})
+
+/***
+ * Get consensus step
+ *
+ * Return response
+ **/
+app.get('/consensus/step', function(req, res) {
+  axios.get(RPC + '/dump_consensus_state', {httpsAgent: agent})
+        .then(function (response) {
+          let step = response.data.result.round_state.step;
+          res.send(step.toString());
+        })
+})
+
+/***
+ * Get consensus proposer_address
+ *
+ * Return response
+ **/
+app.get('/consensus/proposer_address', function(req, res) {
+  axios.get(RPC + '/dump_consensus_state', {httpsAgent: agent})
+        .then(function (response) {
+          let proposer_address = response.data.result.round_state.validators.proposer.address;
+          res.send(proposer_address.toString());
+        })
+})
+
+/***
+ * Get consensus voted_power
+ *
+ * Return response
+ **/
+app.get('/consensus/voted_power', function(req, res) {
+  axios.get(RPC + '/dump_consensus_state', {httpsAgent: agent})
+        .then(function (response) {
+          let round = response.data.result.round_state.round;
+          let voted_power = Math.round(parseFloat(response.data.result.round_state.votes[round].prevotes_bit_array.split(" ")[3])*100);
+          res.send(voted_power.toString());
+        })
+        //res.send('ok');
+})
+
 app.listen(port, () => console.log(`Example app listening on port ${port}!`))
