@@ -15,6 +15,11 @@ app.get('/', function(req, res) {
   res.send('This is root');
 })
 
+/***
+ * Get latest block height
+ *
+ * Return response
+ **/
 app.get('/latest', function(req, res) {
   axios.get(RPC + '/status', { httpsAgent: agent})
         .then(function (response) {
@@ -24,6 +29,11 @@ app.get('/latest', function(req, res) {
         })
 })
 
+/***
+ * Get average blog time
+ *
+ * Return response
+ **/
 app.get('/meantime', function(req, res) {
   axios.get(RPC + '/status', { httpsAgent: agent})
         .then(function (response) {
@@ -52,6 +62,11 @@ app.get('/meantime', function(req, res) {
         })
 })
 
+/***
+ * Get active validators
+ *
+ * Return response
+ **/
 app.get('/activevalidators', function (req, res) {
   axios.get(RPC + '/validators', {httpsAgent: agent})
         .then(function (response) {
@@ -61,6 +76,12 @@ app.get('/activevalidators', function (req, res) {
           res.send(validatorsTotalCount.toString());
         })
 })
+
+/***
+ * Get online voting power
+ *
+ * Return response
+ **/
 app.get('/onlinevotingpower', function (req, res) {
   axios.get(RPC + '/validators', {httpsAgent: agent})
         .then(function (response) {
@@ -115,6 +136,8 @@ app.get('/consensus/step', function(req, res) {
 /***
  * Get consensus proposer_address
  *
+ * @todo: chain a call to tendermint to retrieve name and logo img
+ * 
  * Return response
  **/
 app.get('/consensus/proposer_address', function(req, res) {
