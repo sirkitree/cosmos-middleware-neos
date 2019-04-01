@@ -9,10 +9,16 @@ This project is a Node.js middleware to retrieve the data from the REST API and 
 - https://www.github.com/forbole/big_dipper - source code of the above app to reverse engineer.
 - https://cosmos.network/rpc/ - swagger definition for the Cosmos REST API
 
+## Partners
+- [Simply-VC-Validator](http://www.simply-vc.com.mt/)
+- [Stanislav Atanasov](https://github.com/satanasov)
+- [sirkitree](https://github.com/sirkitree)
+
 ## Endpoints
 read server.js
 
 ## Running
+`npm install`
 `node server.js`
 
 ## Contributing
