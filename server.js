@@ -1,7 +1,8 @@
 const axios = require('axios');
 const https = require('https');
-var express = require('express')
-var app = express()
+const cheerio = require('cheerio');
+const express = require('express');
+const app = express();
 const port = 8080;
 
 const RPC = 'http://rpc.hub.certus.one:26657';
@@ -77,6 +78,27 @@ app.get('/activevalidators', function (req, res) {
         })
 })
 
+/**
+* Get total validators
+*
+* We are cheating a bit and use external URL to get them
+*
+* Return response
+**/
+app.get('/totalvalidators', function (req, res) {
+  axios.get('https://hubble.figment.network/chains/cosmoshub-1', {httpsAgent: agent})
+        .then(function (response) {
+          let $ = cheerio.load(response.data, {
+            normalizeWhitespace: true,
+            xmlMode: true
+          });
+          let root =$('.validator-table-header h4 small').text();
+          let outme = root.split(" ");
+        res.send(outme[1]);
+        })
+})
+
+
 /***
  * Get online voting power
  *
@@ -137,7 +159,7 @@ app.get('/consensus/step', function(req, res) {
  * Get consensus proposer_address
  *
  * @todo: chain a call to tendermint to retrieve name and logo img
- * 
+ *
  * Return response
  **/
 app.get('/consensus/proposer_address', function(req, res) {
