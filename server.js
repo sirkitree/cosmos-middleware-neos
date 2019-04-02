@@ -171,6 +171,85 @@ app.get('/consensus/proposer_address', function(req, res) {
 })
 
 /***
+ * Get consensus proposer_name
+ *
+ * We are still cheating - using external tools to request our info.
+ *
+ * Return response
+ **/
+app.get('/consensus/proposer_name', function(req, res) {
+  axios.get(RPC + '/dump_consensus_state', {httpsAgent: agent})
+        .then(function (response) {
+          let proposer_address = response.data.result.round_state.validators.proposer.address;
+          axios.get('https://stargazer.certus.one/validators/' + proposer_address, {httpsAgent: agent})
+            .then(function (response) {
+              let $ = cheerio.load(response.data, {
+                normalizeWhitespace: true,
+                xmlMode: true
+              });
+              let proposer_name =$('.card-title').text();
+              res.send(proposer_name);
+            })
+        })
+})
+
+/***
+ * Get consensus proposer_url
+ *
+ * We are still cheating - using external tools to request our info.
+ *
+ * Return response
+ **/
+app.get('/consensus/proposer_url', function(req, res) {
+  axios.get(RPC + '/dump_consensus_state', {httpsAgent: agent})
+        .then(function (response) {
+          let proposer_address = response.data.result.round_state.validators.proposer.address;
+          axios.get('https://stargazer.certus.one/validators/' + proposer_address, {httpsAgent: agent})
+            .then(function (response) {
+              let $ = cheerio.load(response.data, {
+                normalizeWhitespace: true,
+                xmlMode: true
+              });
+              let proposer_url =$('.media-body > p:nth-child(4) > a').attr('href');
+              res.send(proposer_url);
+            })
+        })
+})
+
+/***
+ * Get consensus proposer_avatar
+ *
+ * We are still cheating - using external tools to request our info.
+ *
+ * Return response
+ **/
+app.get('/consensus/proposer_avatar', function(req, res) {
+  axios.get(RPC + '/dump_consensus_state', {httpsAgent: agent})
+        .then(function (response) {
+          let proposer_address = response.data.result.round_state.validators.proposer.address;
+          axios.get('https://stargazer.certus.one/validators/' + proposer_address, {httpsAgent: agent})
+            .then(function (response) {
+              let $ = cheerio.load(response.data, {
+                normalizeWhitespace: true,
+                xmlMode: true
+              });
+              let proposer_avatar_sub =$('body > script').html().split('return');
+              let subjson1 = proposer_avatar_sub[1].split("(");
+              let subjson2 = subjson1[0].split('description');
+              let subjson3 = subjson2[1].substr(2);
+              let subjson4 = subjson3.split('},');
+              let subjson5 = subjson4[0].split(',');
+              let identity = subjson5[1].split(':');
+              let key = identity[1].substr(1, identity[1].length - 2);
+              axios.get('https://keybase.io/_/api/1.0/user/lookup.json?fields=pictures&key_suffix=' + key, {httpsAgent: agent})
+              .then(function (key_response) {
+                res.send(key_response.data.them[0].pictures.primary.url);
+              })
+            })
+        })
+})
+
+/***
  * Get consensus voted_power
  *
  * Return response
