@@ -3,7 +3,7 @@ const https = require('https');
 const cheerio = require('cheerio');
 const express = require('express');
 const app = express();
-const port = 8080;
+const PORT = process.env.PORT || 8080;
 
 const RPC = 'http://rpc.hub.certus.one:26657';
 const SGAPI = 'https://sgapi.certus.one';
@@ -242,4 +242,4 @@ app.get('/consensus/voted_power', function(req, res) {
         //res.send('ok');
 })
 
-app.listen(port, () => console.log(`Listening on port ${port}!`));
+app.listen(PORT, () => console.log(`Listening on port ${PORT}!`));
