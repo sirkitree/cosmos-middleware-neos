@@ -86,15 +86,10 @@ app.get('/activevalidators', function (req, res) {
 * Return response
 **/
 app.get('/totalvalidators', function (req, res) {
-  axios.get('https://hubble.figment.network/chains/cosmoshub-1', {httpsAgent: agent})
+  axios.get('https://sgapi.certus.one/state/validatorNames?fields=operator_address', {httpsAgent: agent})
         .then(function (response) {
-          let $ = cheerio.load(response.data, {
-            normalizeWhitespace: true,
-            xmlMode: true
-          });
-          let root =$('.validator-table-header h4 small').text();
-          let outme = root.split(" ");
-        res.send(outme[1]);
+          let root =response.data.length;
+        res.send(root.toString());
         })
 })
 
@@ -181,13 +176,9 @@ app.get('/consensus/proposer_name', function(req, res) {
   axios.get(RPC + '/dump_consensus_state', {httpsAgent: agent})
         .then(function (response) {
           let proposer_address = response.data.result.round_state.validators.proposer.address;
-          axios.get('https://stargazer.certus.one/validators/' + proposer_address, {httpsAgent: agent})
+          axios.get('https://sgapi.certus.one/validator/' + proposer_address, {httpsAgent: agent})
             .then(function (response) {
-              let $ = cheerio.load(response.data, {
-                normalizeWhitespace: true,
-                xmlMode: true
-              });
-              let proposer_name =$('.card-title').text();
+              let proposer_name = response.data.app_data.description.moniker;
               res.send(proposer_name);
             })
         })
@@ -204,13 +195,9 @@ app.get('/consensus/proposer_url', function(req, res) {
   axios.get(RPC + '/dump_consensus_state', {httpsAgent: agent})
         .then(function (response) {
           let proposer_address = response.data.result.round_state.validators.proposer.address;
-          axios.get('https://stargazer.certus.one/validators/' + proposer_address, {httpsAgent: agent})
+          axios.get('https://sgapi.certus.one/validator/' + proposer_address, {httpsAgent: agent})
             .then(function (response) {
-              let $ = cheerio.load(response.data, {
-                normalizeWhitespace: true,
-                xmlMode: true
-              });
-              let proposer_url =$('.media-body > p:nth-child(4) > a').attr('href');
+              let proposer_url = response.data.app_data.description.website;
               res.send(proposer_url);
             })
         })
@@ -227,20 +214,9 @@ app.get('/consensus/proposer_avatar', function(req, res) {
   axios.get(RPC + '/dump_consensus_state', {httpsAgent: agent})
         .then(function (response) {
           let proposer_address = response.data.result.round_state.validators.proposer.address;
-          axios.get('https://stargazer.certus.one/validators/' + proposer_address, {httpsAgent: agent})
+          axios.get('https://sgapi.certus.one/validator/' + proposer_address, {httpsAgent: agent})
             .then(function (response) {
-              let $ = cheerio.load(response.data, {
-                normalizeWhitespace: true,
-                xmlMode: true
-              });
-              let proposer_avatar_sub =$('body > script').html().split('return');
-              let subjson1 = proposer_avatar_sub[1].split("(");
-              let subjson2 = subjson1[0].split('description');
-              let subjson3 = subjson2[1].substr(2);
-              let subjson4 = subjson3.split('},');
-              let subjson5 = subjson4[0].split(',');
-              let identity = subjson5[1].split(':');
-              let key = identity[1].substr(1, identity[1].length - 2);
+              let key = response.data.app_data.description.identity;
               axios.get('https://keybase.io/_/api/1.0/user/lookup.json?fields=pictures&key_suffix=' + key, {httpsAgent: agent})
               .then(function (key_response) {
                 res.send(key_response.data.them[0].pictures.primary.url);
