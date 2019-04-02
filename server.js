@@ -6,6 +6,8 @@ const app = express();
 const port = 8080;
 
 const RPC = 'http://rpc.hub.certus.one:26657';
+const SGAPI = 'https://sgapi.certus.one';
+const KBAPI = 'https://keybase.io/_/api/1.0';
 
 const agent = new https.Agent({
   rejectUnauthorized: false
@@ -86,7 +88,7 @@ app.get('/activevalidators', function (req, res) {
 * Return response
 **/
 app.get('/totalvalidators', function (req, res) {
-  axios.get('https://sgapi.certus.one/state/validatorNames?fields=operator_address', {httpsAgent: agent})
+  axios.get(SGAPI + '/state/validatorNames?fields=operator_address', {httpsAgent: agent})
         .then(function (response) {
           let root =response.data.length;
         res.send(root.toString());
@@ -176,7 +178,7 @@ app.get('/consensus/proposer_name', function(req, res) {
   axios.get(RPC + '/dump_consensus_state', {httpsAgent: agent})
         .then(function (response) {
           let proposer_address = response.data.result.round_state.validators.proposer.address;
-          axios.get('https://sgapi.certus.one/validator/' + proposer_address, {httpsAgent: agent})
+          axios.get(SGAPI + '/validator/' + proposer_address, {httpsAgent: agent})
             .then(function (response) {
               let proposer_name = response.data.app_data.description.moniker;
               res.send(proposer_name);
@@ -195,7 +197,7 @@ app.get('/consensus/proposer_url', function(req, res) {
   axios.get(RPC + '/dump_consensus_state', {httpsAgent: agent})
         .then(function (response) {
           let proposer_address = response.data.result.round_state.validators.proposer.address;
-          axios.get('https://sgapi.certus.one/validator/' + proposer_address, {httpsAgent: agent})
+          axios.get(SGAPI + '/validator/' + proposer_address, {httpsAgent: agent})
             .then(function (response) {
               let proposer_url = response.data.app_data.description.website;
               res.send(proposer_url);
@@ -214,10 +216,10 @@ app.get('/consensus/proposer_avatar', function(req, res) {
   axios.get(RPC + '/dump_consensus_state', {httpsAgent: agent})
         .then(function (response) {
           let proposer_address = response.data.result.round_state.validators.proposer.address;
-          axios.get('https://sgapi.certus.one/validator/' + proposer_address, {httpsAgent: agent})
+          axios.get(SGAPI + '/validator/' + proposer_address, {httpsAgent: agent})
             .then(function (response) {
               let key = response.data.app_data.description.identity;
-              axios.get('https://keybase.io/_/api/1.0/user/lookup.json?fields=pictures&key_suffix=' + key, {httpsAgent: agent})
+              axios.get(KBAPI + '/user/lookup.json?fields=pictures&key_suffix=' + key, {httpsAgent: agent})
               .then(function (key_response) {
                 res.send(key_response.data.them[0].pictures.primary.url);
               })
@@ -240,4 +242,4 @@ app.get('/consensus/voted_power', function(req, res) {
         //res.send('ok');
 })
 
-app.listen(port, () => console.log(`Example app listening on port ${port}!`))
+app.listen(port, () => console.log(`Listening on port ${port}!`));
