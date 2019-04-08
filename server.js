@@ -13,233 +13,204 @@ const agent = new https.Agent({
   rejectUnauthorized: false
 });
 
-
+/**
+ * Root
+ * @todo: list endpoints
+ */
 app.get('/', function(req, res) {
   res.send('This is root');
-})
-
-/***
- * Get latest block height
- *
- * Return response
- **/
-app.get('/latest', function(req, res) {
-  axios.get(RPC + '/status', { httpsAgent: agent})
-        .then(function (response) {
-          var latestBlockHeight;
-          latestBlockHeight = response.data.result.sync_info.latest_block_height;
-          res.send(latestBlockHeight);
-        })
-})
-
-/***
- * Get average blog time
- *
- * Return response
- **/
-app.get('/meantime', function(req, res) {
-  axios.get(RPC + '/status', { httpsAgent: agent})
-        .then(function (response) {
-          var latestBlockHeight;
-          var minLastBlocks;
-          latestBlockHeight = response.data.result.sync_info.latest_block_height;
-          minLastBlocks = latestBlockHeight - 15;
-          axios.get(RPC + '/blockchain?minHeight=' + minLastBlocks + '&maxHeight=' + latestBlockHeight, {httpsAgent: agent})
-                .then(function (response) {
-                  var i = 15;
-                  var times = [];
-                  var maxTime = 0;
-                  while (i > 0)
-                  {
-                    var oldest = new Date(response.data.result.block_metas[i].header.time)
-                    var newer = new Date(response.data.result.block_metas[i - 1].header.time);
-                    var delta = newer - oldest;
-                    maxTime = maxTime + delta;
-                    times.push(delta);
-                    i--;
-                  }
-                  var meanTime = maxTime / 15 / 1000;
-                  console.log(meanTime);
-                  res.send(meanTime.toFixed(2).toString());
-                })
-        })
-})
-
-/***
- * Get active validators
- *
- * Return response
- **/
-app.get('/activevalidators', function (req, res) {
-  axios.get(RPC + '/validators', {httpsAgent: agent})
-        .then(function (response) {
-          let validators = response.data.result;
-          let validatorsTotalCount = validators.validators.length
-          console.log(validatorsTotalCount);
-          res.send(validatorsTotalCount.toString());
-        })
-})
+});
 
 /**
-* Get total validators
+ * Latest block height
+ */
+app.get('/latest', function(req, res) {
+  axios.get(RPC + '/status', { httpsAgent: agent})
+    .then(function (response) {
+      var latestBlockHeight;
+      latestBlockHeight = response.data.result.sync_info.latest_block_height;
+      res.send(latestBlockHeight);
+    })
+});
+
+/**
+ * Average block time
+ */
+app.get('/meantime', function(req, res) {
+  axios.get(RPC + '/status', { httpsAgent: agent})
+    .then(function (response) {
+      var latestBlockHeight;
+      var minLastBlocks;
+      latestBlockHeight = response.data.result.sync_info.latest_block_height;
+      minLastBlocks = latestBlockHeight - 15;
+      axios.get(RPC + '/blockchain?minHeight=' + minLastBlocks + '&maxHeight=' + latestBlockHeight, {httpsAgent: agent})
+        .then(function (response) {
+          var i = 15;
+          var times = [];
+          var maxTime = 0;
+          // something better than while here?
+          while (i > 0) {
+            var oldest = new Date(response.data.result.block_metas[i].header.time)
+            var newer = new Date(response.data.result.block_metas[i - 1].header.time);
+            var delta = newer - oldest;
+            maxTime = maxTime + delta;
+            times.push(delta);
+            i--;
+          }
+          var meanTime = maxTime / 15 / 1000;
+          res.send(meanTime.toFixed(2).toString());
+        })
+    })
+});
+
+/**
+ * Active validators
+ */
+app.get('/activevalidators', function (req, res) {
+  axios.get(RPC + '/validators', {httpsAgent: agent})
+    .then(function (response) {
+      let validators = response.data.result;
+      let validatorsTotalCount = validators.validators.length;
+      res.send(validatorsTotalCount.toString());
+    })
+});
+
+/**
+* Total validators
 *
-* We are cheating a bit and use external URL to get them
-*
-* Return response
-**/
+* Uses alternate URL
+*/
 app.get('/totalvalidators', function (req, res) {
   axios.get(SGAPI + '/state/validatorNames?fields=operator_address', {httpsAgent: agent})
-        .then(function (response) {
-          let root =response.data.length;
-        res.send(root.toString());
-        })
-})
+    .then(function (response) {
+      let root = response.data.length;
+      res.send(root.toString());
+    })
+});
 
-
-/***
- * Get online voting power
- *
- * Return response
- **/
+/**
+ * Online voting power
+ */
 app.get('/onlinevotingpower', function (req, res) {
   axios.get(RPC + '/validators', {httpsAgent: agent})
-        .then(function (response) {
-          let validators = response.data.result.validators;
-          let activeVP = 0;
-          for (v in validators){
-            activeVP += parseInt(validators[v].voting_power);
-          }
-          res.send(activeVP.toString())
-        })
-})
+    .then(function (response) {
+      let validators = response.data.result.validators;
+      let activeVP = 0;
+      for (v in validators){
+        activeVP += parseInt(validators[v].voting_power);
+      }
+      res.send(activeVP.toString());
+    })
+});
 
-/***
- * Get consensus height
- *
- * Return response
- **/
+/**
+ * Consensus height
+ */
 app.get('/consensus/height', function(req, res) {
   axios.get(RPC + '/dump_consensus_state', {httpsAgent: agent})
-        .then(function (response) {
-          let height = response.data.result.round_state.height;
-          res.send(height.toString());
-        })
-})
+    .then(function (response) {
+      let height = response.data.result.round_state.height;
+      res.send(height.toString());
+    })
+});
 
-/***
- * Get consensus round
- *
- * Return response
- **/
+/**
+ * Consensus round
+ */
 app.get('/consensus/round', function(req, res) {
   axios.get(RPC + '/dump_consensus_state', {httpsAgent: agent})
-        .then(function (response) {
-          let round = response.data.result.round_state.round;
-          res.send(round.toString());
-        })
-})
+    .then(function (response) {
+      let round = response.data.result.round_state.round;
+      res.send(round.toString());
+    })
+});
 
-/***
- * Get consensus step
- *
- * Return response
- **/
+/**
+ * Consensus step
+ */
 app.get('/consensus/step', function(req, res) {
   axios.get(RPC + '/dump_consensus_state', {httpsAgent: agent})
-        .then(function (response) {
-          let step = response.data.result.round_state.step;
-          res.send(step.toString());
-        })
-})
+    .then(function (response) {
+      let step = response.data.result.round_state.step;
+      res.send(step.toString());
+    })
+});
 
-/***
- * Get consensus proposer_address
- *
- * @todo: chain a call to tendermint to retrieve name and logo img
- *
- * Return response
- **/
+/**
+ * Consensus proposer address
+ */
 app.get('/consensus/proposer_address', function(req, res) {
   axios.get(RPC + '/dump_consensus_state', {httpsAgent: agent})
-        .then(function (response) {
-          let proposer_address = response.data.result.round_state.validators.proposer.address;
-          res.send(proposer_address.toString());
-        })
-})
+    .then(function (response) {
+      let proposer_address = response.data.result.round_state.validators.proposer.address;
+      res.send(proposer_address.toString());
+    })
+});
 
-/***
- * Get consensus proposer_name
+/**
+ * Consensus proposer name
  *
- * We are still cheating - using external tools to request our info.
- *
- * Return response
- **/
+ * Uses alternate url to get propser's english name.
+ */
 app.get('/consensus/proposer_name', function(req, res) {
   axios.get(RPC + '/dump_consensus_state', {httpsAgent: agent})
+    .then(function (response) {
+      let proposer_address = response.data.result.round_state.validators.proposer.address;
+      axios.get(SGAPI + '/validator/' + proposer_address, {httpsAgent: agent})
         .then(function (response) {
-          let proposer_address = response.data.result.round_state.validators.proposer.address;
-          axios.get(SGAPI + '/validator/' + proposer_address, {httpsAgent: agent})
-            .then(function (response) {
-              let proposer_name = response.data.app_data.description.moniker;
-              res.send(proposer_name);
-            })
+          let proposer_name = response.data.app_data.description.moniker;
+          res.send(proposer_name);
         })
-})
+    })
+});
 
-/***
- * Get consensus proposer_url
+/**
+ * Consensus proposer url
  *
- * We are still cheating - using external tools to request our info.
- *
- * Return response
- **/
+ * Uses alternate url to get proposer's address.
+ */
 app.get('/consensus/proposer_url', function(req, res) {
   axios.get(RPC + '/dump_consensus_state', {httpsAgent: agent})
+    .then(function (response) {
+      let proposer_address = response.data.result.round_state.validators.proposer.address;
+      axios.get(SGAPI + '/validator/' + proposer_address, {httpsAgent: agent})
         .then(function (response) {
-          let proposer_address = response.data.result.round_state.validators.proposer.address;
-          axios.get(SGAPI + '/validator/' + proposer_address, {httpsAgent: agent})
-            .then(function (response) {
-              let proposer_url = response.data.app_data.description.website;
-              res.send(proposer_url);
-            })
+          let proposer_url = response.data.app_data.description.website;
+          res.send(proposer_url);
         })
-})
+    })
+});
 
-/***
- * Get consensus proposer_avatar
+/**
+ * Consensus proposer avatar
  *
- * We are still cheating - using external tools to request our info.
- *
- * Return response
- **/
+ * Uses alternate url to get proposer's logo image address.
+ */
 app.get('/consensus/proposer_avatar', function(req, res) {
   axios.get(RPC + '/dump_consensus_state', {httpsAgent: agent})
+    .then(function (response) {
+      let proposer_address = response.data.result.round_state.validators.proposer.address;
+      axios.get(SGAPI + '/validator/' + proposer_address, {httpsAgent: agent})
         .then(function (response) {
-          let proposer_address = response.data.result.round_state.validators.proposer.address;
-          axios.get(SGAPI + '/validator/' + proposer_address, {httpsAgent: agent})
-            .then(function (response) {
-              let key = response.data.app_data.description.identity;
-              axios.get(KBAPI + '/user/lookup.json?fields=pictures&key_suffix=' + key, {httpsAgent: agent})
-              .then(function (key_response) {
-                res.send(key_response.data.them[0].pictures.primary.url);
-              })
-            })
+          let key = response.data.app_data.description.identity;
+          axios.get(KBAPI + '/user/lookup.json?fields=pictures&key_suffix=' + key, {httpsAgent: agent})
+          .then(function (key_response) {
+            res.send(key_response.data.them[0].pictures.primary.url);
+          })
         })
-})
+    })
+});
 
-/***
- * Get consensus voted_power
- *
- * Return response
- **/
+/**
+ * Consensus vote power
+ */
 app.get('/consensus/voted_power', function(req, res) {
   axios.get(RPC + '/dump_consensus_state', {httpsAgent: agent})
-        .then(function (response) {
-          let round = response.data.result.round_state.round;
-          let voted_power = Math.round(parseFloat(response.data.result.round_state.votes[round].prevotes_bit_array.split(" ")[3])*100);
-          res.send(voted_power.toString());
-        })
-        //res.send('ok');
-})
+    .then(function (response) {
+      let round = response.data.result.round_state.round;
+      let voted_power = Math.round(parseFloat(response.data.result.round_state.votes[round].prevotes_bit_array.split(" ")[3])*100);
+      res.send(voted_power.toString());
+    })
+});
 
 app.listen(PORT, () => console.log(`Listening on port ${PORT}!`));
