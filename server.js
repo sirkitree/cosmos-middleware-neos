@@ -6,7 +6,7 @@ const app = express();
 const PORT = process.env.PORT || 8080;
 
 const RPC = 'http://rpc.hub.certus.one:26657';
-const SGAPI = 'https://sgapi.certus.one';
+const SGAPI = 'https://sgapiv2.certus.one/v1';
 const KBAPI = 'https://keybase.io/_/api/1.0';
 
 const agent = new https.Agent({
@@ -81,9 +81,10 @@ app.get('/activevalidators', function (req, res) {
 * Uses alternate URL
 */
 app.get('/totalvalidators', function (req, res) {
-  axios.get(SGAPI + '/state/validatorNames?fields=operator_address', { httpsAgent: agent })
+  //axios.get(SGAPI + '/state/validatorNames?fields=operator_address', { httpsAgent: agent })
+  axios.get(SGAPI + '/validators/mappings?fields=ACCOUNT_ADDRESS', { httpsAgent: agent })
     .then(function (response) {
-      let root = response.data.length;
+      let root = response.data.nameMappings.length;
       res.send(root.toString());
     })
 });
