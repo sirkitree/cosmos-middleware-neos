@@ -159,7 +159,7 @@ app.get('/consensus/proposer_name', function (req, res) {
       let proposer_address = response.data.result.round_state.validators.proposer.address;
       axios.get(SGAPI + '/validator/' + proposer_address, { httpsAgent: agent })
         .then(function (response) {
-          let proposer_name = response.data.app_data.description.moniker;
+          let proposer_name = response.data.validator.details.description.moniker;
           res.send(proposer_name);
         })
     })
@@ -176,7 +176,7 @@ app.get('/consensus/proposer_url', function (req, res) {
       let proposer_address = response.data.result.round_state.validators.proposer.address;
       axios.get(SGAPI + '/validator/' + proposer_address, { httpsAgent: agent })
         .then(function (response) {
-          let proposer_url = response.data.app_data.description.website;
+          let proposer_url = response.data.validator.details.description.website;
           res.send(proposer_url);
         })
     })
@@ -193,7 +193,7 @@ app.get('/consensus/proposer_avatar', function (req, res) {
       let proposer_address = response.data.result.round_state.validators.proposer.address;
       axios.get(SGAPI + '/validator/' + proposer_address, { httpsAgent: agent })
         .then(function (response) {
-          let key = response.data.app_data.description.identity;
+          let key = response.data.validator.details.description.identity;
           axios.get(KBAPI + '/user/lookup.json?fields=pictures&key_suffix=' + key, { httpsAgent: agent })
             .then(function (key_response) {
               res.send(key_response.data.them[0].pictures.primary.url);
