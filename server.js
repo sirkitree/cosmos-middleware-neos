@@ -6,12 +6,19 @@ const app = express();
 const PORT = process.env.PORT || 8080;
 
 const RPC = 'http://rpc.hub.certus.one:26657';
-const SGAPI = 'https://sgapi.certus.one';
+const SGAPI = 'https://sgapiv2.certus.one/v1';
 const KBAPI = 'https://keybase.io/_/api/1.0';
 
 const agent = new https.Agent({
   rejectUnauthorized: false
 });
+
+/**
+ * helper function for Random
+ */
+ function getRandomInt(max) {
+   return Math.floor(Math.random() * Math.floor(max));
+}
 
 /**
  * Root
@@ -81,9 +88,9 @@ app.get('/activevalidators', function (req, res) {
 * Uses alternate URL
 */
 app.get('/totalvalidators', function (req, res) {
-  axios.get(SGAPI + '/state/validatorNames?fields=operator_address', { httpsAgent: agent })
+  axios.get(SGAPI + '/validators/mappings?fields=ACCOUNT_ADDRESS', { httpsAgent: agent })
     .then(function (response) {
-      let root = response.data.length;
+      let root = response.data.nameMappings.length;
       res.send(root.toString());
     })
 });
@@ -158,7 +165,7 @@ app.get('/consensus/proposer_name', function (req, res) {
       let proposer_address = response.data.result.round_state.validators.proposer.address;
       axios.get(SGAPI + '/validator/' + proposer_address, { httpsAgent: agent })
         .then(function (response) {
-          let proposer_name = response.data.app_data.description.moniker;
+          let proposer_name = response.data.validator.details.description.moniker;
           res.send(proposer_name);
         })
     })
@@ -175,7 +182,7 @@ app.get('/consensus/proposer_url', function (req, res) {
       let proposer_address = response.data.result.round_state.validators.proposer.address;
       axios.get(SGAPI + '/validator/' + proposer_address, { httpsAgent: agent })
         .then(function (response) {
-          let proposer_url = response.data.app_data.description.website;
+          let proposer_url = response.data.validator.details.description.website;
           res.send(proposer_url);
         })
     })
@@ -192,7 +199,7 @@ app.get('/consensus/proposer_avatar', function (req, res) {
       let proposer_address = response.data.result.round_state.validators.proposer.address;
       axios.get(SGAPI + '/validator/' + proposer_address, { httpsAgent: agent })
         .then(function (response) {
-          let key = response.data.app_data.description.identity;
+          let key = response.data.validator.details.description.identity;
           axios.get(KBAPI + '/user/lookup.json?fields=pictures&key_suffix=' + key, { httpsAgent: agent })
             .then(function (key_response) {
               res.send(key_response.data.them[0].pictures.primary.url);
@@ -213,4 +220,251 @@ app.get('/consensus/voted_power', function (req, res) {
     })
 });
 
+/**
+* Random validators
+*
+* Uses alternate URL
+*/
+
+app.get('/validators/random', function (req, res) {
+  axios.get(SGAPI + '/validators/mappings?fields=CONS_ADDRESS', { httpsAgent: agent })
+    .then(function (response) {
+      var mappings;
+      var output = new Array();
+      var randoms = new Array();
+      var images = new Array();
+      mappings = response.data.nameMappings;
+      for (let i = 0; i < 10; i++)
+      {
+        let number = getRandomInt(mappings.length);
+        randoms.push(mappings[number].consensusAddress);
+        mappings.splice(number, 1);
+      }
+      axios.all([
+          axios.get(SGAPI + '/validator/' + randoms[0], { httpsAgent: agent }),
+          axios.get(SGAPI + '/validator/' + randoms[1], { httpsAgent: agent }),
+          axios.get(SGAPI + '/validator/' + randoms[2], { httpsAgent: agent }),
+          axios.get(SGAPI + '/validator/' + randoms[3], { httpsAgent: agent }),
+          axios.get(SGAPI + '/validator/' + randoms[4], { httpsAgent: agent }),
+          axios.get(SGAPI + '/validator/' + randoms[5], { httpsAgent: agent }),
+          axios.get(SGAPI + '/validator/' + randoms[6], { httpsAgent: agent }),
+          axios.get(SGAPI + '/validator/' + randoms[7], { httpsAgent: agent }),
+          axios.get(SGAPI + '/validator/' + randoms[8], { httpsAgent: agent }),
+          axios.get(SGAPI + '/validator/' + randoms[9], { httpsAgent: agent }),
+
+      ])
+      .then(axios.spread(function (data1, data2, data3, data4, data5, data6, data7, data8, data9, data10) {
+        let proposer_name = data1.data.validator.details.description.moniker;
+        let tokens = data1.data.validator.details.tokens
+        let power = tokens.slice(0, -6)
+        let uptime = data1.data.validator.uptime.period
+        output.push([{name:proposer_name, power:power, uptime:uptime}])
+        let key = data1.data.validator.details.description.identity;
+        images.push(key);
+
+        proposer_name = data2.data.validator.details.description.moniker;
+        tokens = data2.data.validator.details.tokens
+        power = tokens.slice(0, -6)
+        uptime = data2.data.validator.uptime.period
+        output.push([{name:proposer_name, power:power, uptime:uptime}])
+        key = data2.data.validator.details.description.identity;
+        images.push(key);
+
+        proposer_name = data3.data.validator.details.description.moniker;
+        tokens = data3.data.validator.details.tokens
+        power = tokens.slice(0, -6)
+        uptime = data3.data.validator.uptime.period
+        output.push([{name:proposer_name, power:power, uptime:uptime}])
+        key = data3.data.validator.details.description.identity;
+        images.push(key);
+
+        proposer_name = data4.data.validator.details.description.moniker;
+        tokens = data4.data.validator.details.tokens
+        power = tokens.slice(0, -6)
+        uptime = data4.data.validator.uptime.period
+        output.push([{name:proposer_name, power:power, uptime:uptime}])
+        key = data4.data.validator.details.description.identity;
+        images.push(key);
+
+        proposer_name = data5.data.validator.details.description.moniker;
+        tokens = data5.data.validator.details.tokens
+        power = tokens.slice(0, -6)
+        uptime = data5.data.validator.uptime.period
+        output.push([{name:proposer_name, power:power, uptime:uptime}])
+        key = data5.data.validator.details.description.identity;
+        images.push(key);
+
+        proposer_name = data6.data.validator.details.description.moniker;
+        tokens = data6.data.validator.details.tokens
+        power = tokens.slice(0, -6)
+        uptime = data6.data.validator.uptime.period
+        output.push([{name:proposer_name, power:power, uptime:uptime}])
+        key = data6.data.validator.details.description.identity;
+        images.push(key);
+
+        proposer_name = data7.data.validator.details.description.moniker;
+        tokens = data7.data.validator.details.tokens
+        power = tokens.slice(0, -6)
+        uptime = data7.data.validator.uptime.period
+        output.push([{name:proposer_name, power:power, uptime:uptime}])
+        key = data7.data.validator.details.description.identity;
+        images.push(key);
+
+        proposer_name = data8.data.validator.details.description.moniker;
+        tokens = data8.data.validator.details.tokens
+        power = tokens.slice(0, -6)
+        uptime = data8.data.validator.uptime.period
+        output.push([{name:proposer_name, power:power, uptime:uptime}])
+        key = data8.data.validator.details.description.identity;
+        images.push(key);
+
+        proposer_name = data9.data.validator.details.description.moniker;
+        tokens = data9.data.validator.details.tokens
+        power = tokens.slice(0, -6)
+        uptime = data9.data.validator.uptime.period
+        output.push([{name:proposer_name, power:power, uptime:uptime}])
+        key = data9.data.validator.details.description.identity;
+        images.push(key);
+
+        proposer_name = data10.data.validator.details.description.moniker;
+        tokens = data10.data.validator.details.tokens
+        power = tokens.slice(0, -6)
+        uptime = data10.data.validator.uptime.period
+        output.push([{name:proposer_name, power:power, uptime:uptime}])
+        key = data10.data.validator.details.description.identity;
+        images.push(key);
+
+        axios.all([
+            axios.get(KBAPI + '/user/lookup.json?fields=pictures&key_suffix=' + images[0], { httpsAgent: agent }),
+            axios.get(KBAPI + '/user/lookup.json?fields=pictures&key_suffix=' + images[1], { httpsAgent: agent }),
+            axios.get(KBAPI + '/user/lookup.json?fields=pictures&key_suffix=' + images[2], { httpsAgent: agent }),
+            axios.get(KBAPI + '/user/lookup.json?fields=pictures&key_suffix=' + images[3], { httpsAgent: agent }),
+            axios.get(KBAPI + '/user/lookup.json?fields=pictures&key_suffix=' + images[4], { httpsAgent: agent }),
+            axios.get(KBAPI + '/user/lookup.json?fields=pictures&key_suffix=' + images[5], { httpsAgent: agent }),
+            axios.get(KBAPI + '/user/lookup.json?fields=pictures&key_suffix=' + images[6], { httpsAgent: agent }),
+            axios.get(KBAPI + '/user/lookup.json?fields=pictures&key_suffix=' + images[7], { httpsAgent: agent }),
+            axios.get(KBAPI + '/user/lookup.json?fields=pictures&key_suffix=' + images[8], { httpsAgent: agent }),
+            axios.get(KBAPI + '/user/lookup.json?fields=pictures&key_suffix=' + images[9], { httpsAgent: agent }),
+        ])
+        .then(axios.spread(function (data1, data2, data3, data4, data5, data6, data7, data8, data9, data10) {
+          if (data1.data.them)
+          {
+            console.log(data1.data.them[0].pictures.primary.url)
+          }
+          let avatar;
+
+          if (data1.data.them)
+          {
+            avatar = data1.data.them[0].pictures.primary.url
+          }
+          else {
+            avatar = 'none'
+          }
+          output[0].push({ image: avatar });
+
+          if (data2.data.them)
+          {
+            avatar = data2.data.them[0].pictures.primary.url
+          }
+          else {
+            avatar = 'none'
+          }
+          output[1].push({ image: avatar });
+
+          if (data3.data.them)
+          {
+            avatar = data3.data.them[0].pictures.primary.url
+          }
+          else {
+            avatar = 'none'
+          }
+          output[2].push({ image: avatar });
+
+          if (data4.data.them)
+          {
+            avatar = data4.data.them[0].pictures.primary.url
+          }
+          else {
+            avatar = 'none'
+          }
+          output[3].push({ image: avatar });
+
+          if (data5.data.them)
+          {
+            avatar = data5.data.them[0].pictures.primary.url
+          }
+          else {
+            avatar = 'none'
+          }
+          output[4].push({ image: avatar });
+
+          if (data6.data.them)
+          {
+            avatar = data6.data.them[0].pictures.primary.url
+          }
+          else {
+            avatar = 'none'
+          }
+          output[5].push({ image: avatar });
+
+          if (data7.data.them)
+          {
+            avatar = data7.data.them[0].pictures.primary.url
+          }
+          else {
+            avatar = 'none'
+          }
+          output[6].push({ image: avatar });
+
+          if (data8.data.them)
+          {
+            avatar = data8.data.them[0].pictures.primary.url
+          }
+          else {
+            avatar = 'none'
+          }
+          output[7].push({ image: avatar });
+
+          if (data9.data.them)
+          {
+            avatar = data9.data.them[0].pictures.primary.url
+          }
+          else {
+            avatar = 'none'
+          }
+          output[8].push({ image: avatar });
+
+          if (data10.data.them)
+          {
+            avatar = data10.data.them[0].pictures.primary.url
+          }
+          else {
+            avatar = 'none'
+          }
+          output[9].push({ image: avatar });
+
+          var output_str = ''
+          for (let i = 0; i < output.length; i++)
+          {
+            output_str += output[i][0].name + ',' + output[i][1].image + ',' + output[i][0].power + ',' + output[i][0].uptime
+            if (i < 9)
+            {
+              output_str += ','
+            }
+          }
+          res.send(output_str);
+        }));
+      }));
+    });
+});
+
 app.listen(PORT, () => console.log(`Listening on port ${PORT}!`));
+
+
+function addToOuptut(message)
+{
+  console.log('trigger me with ' + message);
+  output += message;
+
+  console.log(output)
+}
