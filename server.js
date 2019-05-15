@@ -420,13 +420,7 @@ app.get('/validators/random', function (req, res) {
               }
               output[9].push({ image: avatar });
 
-              //var output_str = '';
-              //for (let i = 0; i < output.length; i++) {
-              //  output_str += output[i][0].name + ',' + output[i][1].image + ',' + output[i][0].power + ',' + output[i][0].uptime
-              //  if (i < 9) {
-              //    output_str += ',';
-              //  }
-              //}
+
               var output_json = {
                 "validators": []
               };
@@ -440,9 +434,8 @@ app.get('/validators/random', function (req, res) {
                 }
                 output_json['validators'].push(validator);
               }
-              console.log(output_json);
-              res.send('123')
-              //res.send(output_str);
+              
+              res.send(JSON.stringify(output_json))
             }));
         }));
     });
