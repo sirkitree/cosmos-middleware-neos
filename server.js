@@ -434,11 +434,77 @@ app.get('/validators/random', function (req, res) {
                 }
                 output_json['validators'].push(validator);
               }
-              
+
               res.send(JSON.stringify(output_json))
             }));
         }));
     });
 });
+
+/**
+ * Graph block time
+ */
+app.get('/graph', function (req, res) {
+  axios.get(RPC + '/status', { httpsAgent: agent })
+    .then(function (response) {
+      var latestBlockHeight;
+      var minLastBlocks;
+      latestBlockHeight1 = response.data.result.sync_info.latest_block_height;
+      minLastBlocks1 = latestBlockHeight1 - 20;
+      latestBlockHeight2 = response.data.result.sync_info.latest_block_height - 21;
+      minLastBlocks2 = latestBlockHeight2 - 20;
+      latestBlockHeight3 = response.data.result.sync_info.latest_block_height - 21;
+      minLastBlocks3 = latestBlockHeight2 - 10;
+      axios.all([
+        axios.get(RPC + '/blockchain?minHeight=' + minLastBlocks1 + '&maxHeight=' + latestBlockHeight1, { httpsAgent: agent }),
+        axios.get(RPC + '/blockchain?minHeight=' + minLastBlocks2 + '&maxHeight=' + latestBlockHeight2, { httpsAgent: agent }),
+        axios.get(RPC + '/blockchain?minHeight=' + minLastBlocks3 + '&maxHeight=' + latestBlockHeight3, { httpsAgent: agent }),
+      ])
+        .then(axios.spread(function (data1, data2, data3) {
+          var times = [];
+          var maxTime = 0;
+          for (let i = 10; --i; i > 0)
+          {
+            var oldest = new Date(data3.data.result.block_metas[i].header.time);
+            var newer = new Date(data3.data.result.block_metas[i - 1].header.time);
+            var delta = {
+              block_tick: (newer - oldest)/1000,
+              block_time: data3.data.result.block_metas[i].header.time
+            };
+
+            maxTime = maxTime + delta['block_tick'];
+            times.push(delta);
+          }
+          for (let i = 20; --i; i > 0)
+          {
+            var oldest = new Date(data2.data.result.block_metas[i].header.time);
+            var newer = new Date(data2.data.result.block_metas[i - 1].header.time);
+            var delta = {
+              block_tick: (newer - oldest)/1000,
+              block_time: data2.data.result.block_metas[i].header.time
+            };
+            maxTime = maxTime + delta['block_tick'];
+            times.push(delta);
+          }
+          for (let i = 20; --i; i > 0)
+          {
+            var oldest = new Date(data1.data.result.block_metas[i].header.time);
+            var newer = new Date(data1.data.result.block_metas[i - 1].header.time);
+            var delta = {
+              block_tick: (newer - oldest)/1000,
+              block_time: data1.data.result.block_metas[i].header.time
+            };
+            maxTime = maxTime + delta['block_tick'];
+            times.push(delta);
+          }
+          var meanTime = maxTime / 50;
+          var output = {
+            mean: meanTime.toFixed(2),
+            times: times
+          }
+          res.send(JSON.stringify(output));
+        }))
+       })
+     })
 
 app.listen(PORT, () => console.log(`Listening on port ${PORT}!`));
