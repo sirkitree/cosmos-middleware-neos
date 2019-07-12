@@ -507,4 +507,13 @@ app.get('/graph', function (req, res) {
        })
      })
 
+  app.get('/transactions/:tx', function (req, res) {
+    let tx = req.params.tx;
+    axios.get(RPC + '/tx?hash=0x' + tx, { httpsAgent: agent })
+      .then(function (response) {
+        res.send(JSON.stringify(response.data))
+      });
+
+  });
+
 app.listen(PORT, () => console.log(`Listening on port ${PORT}!`));
