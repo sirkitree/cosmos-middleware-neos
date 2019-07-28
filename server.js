@@ -511,7 +511,13 @@ app.get('/graph', function (req, res) {
     let tx = req.params.tx;
     axios.get(RPC + '/tx?hash=0x' + tx, { httpsAgent: agent })
       .then(function (response) {
-        res.send(JSON.stringify(response.data))
+        var log = JSON.parse(response.data.result.tx_result.log);
+        response.data.result.tx_result.log = log;
+        
+        log = JSON.parse(response.data.result.tx_result.log[0].log);
+        response.data.result.tx_result.log[0].log = log;
+        
+        res.send(JSON.stringify(response.data));
       });
 
   });
