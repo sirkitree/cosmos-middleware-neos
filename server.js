@@ -225,7 +225,6 @@ app.get('/consensus/voted_power', function (req, res) {
 *
 * Uses alternate URL
 */
-
 app.get('/validators/random', function (req, res) {
   axios.get(SGAPI + '/validators/mappings?fields=CONS_ADDRESS', { httpsAgent: agent })
     .then(function (response) {
@@ -519,7 +518,16 @@ app.get('/graph', function (req, res) {
         
         res.send(JSON.stringify(response.data));
       });
+  });
 
+  app.get('/blocks/:height', function (req, res) {
+    let height = req.params.height;
+    // not sure why the API doesn't just take the exact number
+    height++; 
+    axios.get(SGAPI + '/blocks?limit=1&afterBlock=' + height, { httpsAgent: agent })
+      .then(function (response) {
+        res.send(JSON.stringify(response.data));
+      });
   });
 
 app.listen(PORT, () => console.log(`Listening on port ${PORT}!`));
