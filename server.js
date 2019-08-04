@@ -506,7 +506,10 @@ app.get('/graph', function (req, res) {
        })
      })
 
-  // I don't see any way to get only one transaction speed. Speed is for block.
+  /**
+  * Get transaction info
+  * I don't see any way to get only one transaction speed. Speed is for block.
+  **/
   app.get('/transactions/:tx', function (req, res) {
     let tx = req.params.tx;
     axios.get(RPC + '/tx?hash=0x' + tx, { httpsAgent: agent })
@@ -531,6 +534,29 @@ app.get('/graph', function (req, res) {
           });
       });
   });
+
+  /**
+  * Get list of blocks
+  **/
+  app.get('/listblocks', function (req, res) {
+    axios.get(SGAPI + '/blocks?limit=50', { httpsAgent: agent })
+    .then(function (response) {
+      var blocks = [];
+
+      for (let i = 0; i < 50; i++)
+      {
+        blocks.push(response.data.blocks[i]);
+      }
+      axios.get(SGAPI + '/blocks?limit=50&afterBlock=' + blocks[49].height, { httpsAgent: agent })
+        .then (function (response) {
+          for (let i = 0; i < 50; i++)
+          {
+            blocks.push(response.data.blocks[i]);
+          }
+          res.send(JSON.stringify(blocks));
+        })
+    })
+  })
 
   app.get('/blocks/:height', function (req, res) {
     let height = req.params.height;
