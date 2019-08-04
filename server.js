@@ -506,24 +506,36 @@ app.get('/graph', function (req, res) {
        })
      })
 
+  // I don't see any way to get only one transaction speed. Speed is for block.
   app.get('/transactions/:tx', function (req, res) {
     let tx = req.params.tx;
     axios.get(RPC + '/tx?hash=0x' + tx, { httpsAgent: agent })
       .then(function (response) {
-        var log = JSON.parse(response.data.result.tx_result.log);
-        response.data.result.tx_result.log = log;
-        
-        log = JSON.parse(response.data.result.tx_result.log[0].log);
-        response.data.result.tx_result.log[0].log = log;
-        
-        res.send(JSON.stringify(response.data));
+        // So we get transaction height
+        let height = response.data.result.height
+
+        // Now request data from transactions in SGAPI
+
+        axios.get(SGAPI + '/transaction/' + height + '/' + tx)
+          .then(function (response) {
+
+            let mes_data = JSON.parse(response.data.transaction.messages[0].data);
+            response.data.transaction.messages[0].data = mes_data;
+
+            var log = JSON.parse(response.data.transaction.result.log);
+            response.data.transaction.result.log = log;
+
+            log = JSON.parse(response.data.transaction.result.log[0].log);
+            response.data.transaction.result.log[0].log = log;
+            res.send(JSON.stringify(response.data));
+          });
       });
   });
 
   app.get('/blocks/:height', function (req, res) {
     let height = req.params.height;
     // not sure why the API doesn't just take the exact number
-    height++; 
+    height++;
     axios.get(SGAPI + '/blocks?limit=1&afterBlock=' + height, { httpsAgent: agent })
       .then(function (response) {
         res.send(JSON.stringify(response.data));
