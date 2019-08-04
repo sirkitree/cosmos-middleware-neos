@@ -558,6 +558,16 @@ app.get('/graph', function (req, res) {
     })
   })
 
+  /**
+  * Get list of transactions
+  **/
+  app.get('/listtransactions', function (req, res) {
+    axios.get(SGAPI + '/transactions?limit=100', { httpsAgent: agent })
+    .then(function (response) {
+      res.send(JSON.stringify(response.data.transactions));
+    })
+  })
+
   app.get('/blocks/:height', function (req, res) {
     let height = req.params.height;
     // not sure why the API doesn't just take the exact number
