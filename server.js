@@ -521,15 +521,21 @@ app.get('/graph', function (req, res) {
 
         axios.get(SGAPI + '/transaction/' + height + '/' + tx)
           .then(function (response) {
+            let msgData = response.data.transaction.messages[0].data;
+            if (msgData) {
+              response.data.transaction.messages[0].data = JSON.parse(msgData);
+            }
 
-            let mes_data = JSON.parse(response.data.transaction.messages[0].data);
-            response.data.transaction.messages[0].data = mes_data;
+            let log = response.data.transaction.result.log;
+            console.log(typeof(response.data.transaction.result.log));
+            if (log) {
+              response.data.transaction.result.log = JSON.parse(log);
+            }
 
-            var log = JSON.parse(response.data.transaction.result.log);
-            response.data.transaction.result.log = log;
-
-            log = JSON.parse(response.data.transaction.result.log[0].log);
-            response.data.transaction.result.log[0].log = log;
+            let logLog = response.data.transaction.result.log[0].log;
+            if (logLog) {
+              response.data.transaction.result.log[0].log = JSON.parse(logLog);
+            }
             res.send(JSON.stringify(response.data));
           });
       });
