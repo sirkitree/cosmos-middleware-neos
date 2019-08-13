@@ -671,4 +671,21 @@ app.get('/account/:account', function (req, res){
         }))
 });
 
+
+/**
+ * Market info
+ */
+app.get('/market', function (req, res){
+	axios.get(CGAPI + '/coins/cosmos?localization=false&tickers=false&community_data=false&developer_data=false&sparkline=false', { httpsAgent: agent })
+		.then(function (response) {
+		    console.log(response.data);
+			let output = {
+				price: response.data.market_data.current_price.usd,
+				market_cap: response.data.market_data.market_cap.usd,
+				total_volume: response.data.market_data.total_volume.usd
+			};
+			res.send(JSON.stringify(output));
+		})
+});
+
 app.listen(PORT, () => console.log(`Listening on port ${PORT}!`));
