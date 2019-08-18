@@ -8,6 +8,7 @@ const PORT = process.env.PORT || 8080;
 const RPC = 'http://rpc.hub.certus.one:26657';
 const SGAPI = 'https://sgapiv2.certus.one/v1';
 const KBAPI = 'https://keybase.io/_/api/1.0';
+const CGAPI = 'https://api.coingecko.com/api/v3';
 
 const agent = new https.Agent({
   rejectUnauthorized: false
@@ -562,7 +563,7 @@ app.get('/graph', function (req, res) {
           res.send(JSON.stringify(blocks));
         })
     })
-  })
+  });
 
   /**
   * Get list of transactions
@@ -572,7 +573,7 @@ app.get('/graph', function (req, res) {
     .then(function (response) {
       res.send(JSON.stringify(response.data.transactions));
     })
-  })
+  });
 
   app.get('/blocks/:height', function (req, res) {
     let height = req.params.height;
@@ -583,5 +584,114 @@ app.get('/graph', function (req, res) {
         res.send(JSON.stringify(response.data));
       });
   });
+
+/**
+ * Get account info
+ */
+app.get('/account/:account', function (req, res){
+    let req_account = req.params.account;
+    axios.all([
+        axios.get(SGAPI + '/account/' + req_account, { httpsAgent: agent }),
+        axios.get(SGAPI + '/account/' + req_account + '/rewards', { httpsAgent: agent }),
+        axios.get(SGAPI + '/delegations?delegatorAddress=' + req_account, { httpsAgent: agent }),
+        axios.get(SGAPI + '/transactions?&sender=' + req_account, { httpsAgent: agent }),
+        axios.get(SGAPI + '/transactions?offset=20&sender=' + req_account, { httpsAgent: agent }),
+        axios.get(SGAPI + '/transactions?offset=40&sender=' + req_account, { httpsAgent: agent }),
+        axios.get(SGAPI + '/transactions?offset=60&sender=' + req_account, { httpsAgent: agent }),
+        axios.get(SGAPI + '/transactions?offset=80&sender=' + req_account, { httpsAgent: agent }),
+        axios.get(CGAPI + '/simple/price?ids=cosmos&vs_currencies=usd', { httpsAgent: agent }),
+    ])
+        .then(axios.spread(function (data1, data2, data3, data4, data5, data6, data7, data8, data9) {
+            let available = 0;
+            if (data1.data.account.balance.length > 0)
+            {
+                available = parseInt(data1.data.account.balance[0].amount);
+            }
+            let delegated = 0;
+            if (data1.data.account.vested)
+            {
+                delegated = parseInt(data1.data.account.vestingInfo.delegatedFree[0].amount);
+            }
+            let rewards = 0;
+            if (data2.data.rewards.length > 0)
+            {
+                rewards = parseInt(data2.data.rewards[0].amount)
+            }
+            let transactions = [];
+            if (data4.data.transactions.length > 0) {
+                for (let i = 0; i < data4.data.transactions.length; i++)
+                {
+                    transactions[i] = data4.data.transactions[i]
+                }
+            }
+            if (data5.data.transactions.length > 0) {
+                for (let i = 0; i < data5.data.transactions.length; i++)
+                {
+                    transactions[20 + i] = data5.data.transactions[i]
+                }
+            }
+            if (data6.data.transactions.length > 0) {
+                for (let i = 0; i < data6.data.transactions.length; i++)
+                {
+                    transactions[40 + i] = data6.data.transactions[i]
+                }
+            }
+            if (data7.data.transactions.length > 0) {
+                for (let i = 0; i < data7.data.transactions.length; i++)
+                {
+                    transactions[60 + i] = data7.data.transactions[i]
+                }
+            }
+            if (data8.data.transactions.length > 0) {
+                for (let i = 0; i < data8.data.transactions.length; i++)
+                {
+                    transactions[80 + i] = data8.data.transactions[i]
+                }
+            }
+            for (let i = 0; i < transactions.length; i++)
+            {
+                for (let a = 0; a < transactions[i].messages.length; a++)
+                {
+                    transactions[i].messages[a].data = JSON.parse(transactions[i].messages[a].data);
+                }
+            }
+            let info = {
+                address: data1.data.account.address,
+                balance: {
+                    available: available,
+                    delegated: delegated,
+                    rewards: rewards,
+                    total: available + delegated + rewards,
+                    usdEq: ((available + delegated + rewards)/1000) * parseFloat(data9.data.cosmos.usd),
+                    atomPrice: parseFloat(data9.data.cosmos.usd)
+                },
+                delegations: data3.data.delegations,
+                transactions: transactions
+
+            };
+            //console.log(data1.data.account.balance);
+            //console.log(data2.data);
+            //console.log(info.balance);
+            //console.log(data3.data);
+            res.send(JSON.stringify(info));
+        }))
+});
+
+
+/**
+ * Market info
+ */
+app.get('/market', function (req, res){
+	axios.get(CGAPI + '/coins/cosmos?localization=false&tickers=false&community_data=false&developer_data=false&sparkline=false', { httpsAgent: agent })
+		.then(function (response) {
+		    console.log(response.data);
+			let output = {
+				price: response.data.market_data.current_price.usd,
+				market_cap: response.data.market_data.market_cap.usd,
+				total_volume: response.data.market_data.total_volume.usd
+			};
+			res.send(JSON.stringify(output));
+		})
+});
 
 app.listen(PORT, () => console.log(`Listening on port ${PORT}!`));
