@@ -26,11 +26,47 @@ function getRandomInt(max) {
  * @todo: list endpoints
  */
 app.get('/', function (req, res) {
-  res.send('This is root');
+  let endpoints = [];
+
+  endpoints.push('/latest - Latests block height. STRING');
+  endpoints.push('/meantime - Average block time. STRING');
+
+  // @todo: change to /validators/active
+  endpoints.push('/activevalidators - Number of active validators on the network. STRING');
+
+  // @todo: change to /validators/total
+  endpoints.push('/totalvalidators - Total number of validators on the network. STRING');
+
+  // @todo: change to /validators/power
+  endpoints.push('/onlinevotingpower - Total voting power of all validators on the network. STRING');
+  endpoints.push('/consensus/height - Consensus height. STRING');
+  endpoints.push('/consensus/round - Consensus round. STRING');
+  endpoints.push('/consensus/step - Consensus step. STRING');
+  endpoints.push('/consensus/proposer_address - Consensus proposer address. STRING');
+  endpoints.push('/consensus/proposer_name - Consensus proposer name. STRING');
+  endpoints.push('/consensus/proposer_url - Consensus proposer URL. STRING');
+  endpoints.push('/consensus/proposer_avatar - Consensus proposer logo image. STRING');
+  endpoints.push('/consensus/voted_power - Consensus proposer voting power. STRING');
+  endpoints.push('/validators/random - Returns a random validator. JSON');
+  endpoints.push('/graph - Block time. JSON');
+  endpoints.push('/transactions/:tx - Given a transaction hash, return info about the transaction. JSON');
+
+  // @todo: change ot /blocks
+  endpoints.push('/listblocks - List of 50 block by latest height. JSON');
+
+  // @todo: change to /transactions
+  endpoints.push('/listtransactions - List of 100 transactions by latest. JSON');
+  endpoints.push('/blocks/:height - Given a height, return the block info. JSON' );
+  endpoints.push('/account/:account - Given an account address hash, return address info. JSON');
+  endpoints.push('market - Returns latest market information. JSON');
+
+  let output = endpoints.map(out => out);
+
+  res.send(output);
 });
 
 /**
- * Latest block height
+ * Latest block height.
  */
 app.get('/latest', function (req, res) {
   axios.get(RPC + '/status', { httpsAgent: agent })
@@ -42,7 +78,7 @@ app.get('/latest', function (req, res) {
 });
 
 /**
- * Average block time
+ * Average block time.
  */
 app.get('/meantime', function (req, res) {
   axios.get(RPC + '/status', { httpsAgent: agent })
@@ -72,7 +108,7 @@ app.get('/meantime', function (req, res) {
 });
 
 /**
- * Active validators
+ * Number of active validators on the network.
  */
 app.get('/activevalidators', function (req, res) {
   axios.get(RPC + '/validators', { httpsAgent: agent })
@@ -442,7 +478,7 @@ app.get('/validators/random', function (req, res) {
 });
 
 /**
- * Graph block time
+ * Graph block time.
  */
 app.get('/graph', function (req, res) {
   axios.get(RPC + '/status', { httpsAgent: agent })
@@ -503,87 +539,91 @@ app.get('/graph', function (req, res) {
             times: times
           }
           res.send(JSON.stringify(output));
-        }))
-       })
-     })
+        }
+      )
+    )
+  })
+});
 
-  /**
-  * Get transaction info
-  * I don't see any way to get only one transaction speed. Speed is for block.
-  **/
-  app.get('/transactions/:tx', function (req, res) {
-    let tx = req.params.tx;
-    axios.get(RPC + '/tx?hash=0x' + tx, { httpsAgent: agent })
-      .then(function (response) {
-        // So we get transaction height
-        let height = response.data.result.height
-
-        // Now request data from transactions in SGAPI
-
-        axios.get(SGAPI + '/transaction/' + height + '/' + tx)
-          .then(function (response) {
-            let msgData = response.data.transaction.messages[0].data;
-            if (msgData) {
-              response.data.transaction.messages[0].data = JSON.parse(msgData);
-            }
-
-            let log = response.data.transaction.result.log;
-            console.log(typeof(response.data.transaction.result.log));
-            if (log) {
-              response.data.transaction.result.log = JSON.parse(log);
-            }
-
-            let logLog = response.data.transaction.result.log[0].log;
-            if (logLog) {
-              response.data.transaction.result.log[0].log = JSON.parse(logLog);
-            }
-            res.send(JSON.stringify(response.data));
-          });
-      });
-  });
-
-  /**
-  * Get list of blocks
-  **/
-  app.get('/listblocks', function (req, res) {
-    axios.get(SGAPI + '/blocks?limit=50', { httpsAgent: agent })
+/**
+ * Get transaction info for given tx hash.
+ */
+app.get('/transactions/:tx', function (req, res) {
+  let tx = req.params.tx;
+  axios.get(RPC + '/tx?hash=0x' + tx, { httpsAgent: agent })
     .then(function (response) {
-      var blocks = [];
+      // So we get transaction height
+      let height = response.data.result.height
 
-      for (let i = 0; i < 50; i++)
-      {
-        blocks.push(response.data.blocks[i]);
-      }
-      axios.get(SGAPI + '/blocks?limit=50&afterBlock=' + blocks[49].height, { httpsAgent: agent })
-        .then (function (response) {
-          for (let i = 0; i < 50; i++)
-          {
-            blocks.push(response.data.blocks[i]);
+      // Now request data from transactions in SGAPI
+
+      axios.get(SGAPI + '/transaction/' + height + '/' + tx)
+        .then(function (response) {
+          let msgData = response.data.transaction.messages[0].data;
+          if (msgData) {
+            response.data.transaction.messages[0].data = JSON.parse(msgData);
           }
-          res.send(JSON.stringify(blocks));
-        })
-    })
-  });
 
-  /**
-  * Get list of transactions
-  **/
-  app.get('/listtransactions', function (req, res) {
-    axios.get(SGAPI + '/transactions?limit=100', { httpsAgent: agent })
+          let log = response.data.transaction.result.log;
+          console.log(typeof(response.data.transaction.result.log));
+          if (log) {
+            response.data.transaction.result.log = JSON.parse(log);
+          }
+
+          let logLog = response.data.transaction.result.log[0].log;
+          if (logLog) {
+            response.data.transaction.result.log[0].log = JSON.parse(logLog);
+          }
+          res.send(JSON.stringify(response.data));
+        });
+    });
+});
+
+/**
+ * Get list of blocks.
+ */
+app.get('/listblocks', function (req, res) {
+  axios.get(SGAPI + '/blocks?limit=50', { httpsAgent: agent })
+  .then(function (response) {
+    var blocks = [];
+
+    for (let i = 0; i < 50; i++)
+    {
+      blocks.push(response.data.blocks[i]);
+    }
+    axios.get(SGAPI + '/blocks?limit=50&afterBlock=' + blocks[49].height, { httpsAgent: agent })
+      .then (function (response) {
+        for (let i = 0; i < 50; i++)
+        {
+          blocks.push(response.data.blocks[i]);
+        }
+        res.send(JSON.stringify(blocks));
+      })
+  })
+});
+
+/**
+ * Get list of transactions.
+ */
+app.get('/listtransactions', function (req, res) {
+  axios.get(SGAPI + '/transactions?limit=100', { httpsAgent: agent })
+  .then(function (response) {
+    res.send(JSON.stringify(response.data.transactions));
+  })
+});
+
+/**
+ * Get block info at a given height.
+ */
+app.get('/blocks/:height', function (req, res) {
+  let height = req.params.height;
+  // not sure why the API doesn't just take the exact number
+  height++;
+  axios.get(SGAPI + '/blocks?limit=1&afterBlock=' + height, { httpsAgent: agent })
     .then(function (response) {
-      res.send(JSON.stringify(response.data.transactions));
-    })
-  });
-
-  app.get('/blocks/:height', function (req, res) {
-    let height = req.params.height;
-    // not sure why the API doesn't just take the exact number
-    height++;
-    axios.get(SGAPI + '/blocks?limit=1&afterBlock=' + height, { httpsAgent: agent })
-      .then(function (response) {
-        res.send(JSON.stringify(response.data));
-      });
-  });
+      res.send(JSON.stringify(response.data));
+    });
+});
 
 /**
  * Get account info
@@ -676,7 +716,6 @@ app.get('/account/:account', function (req, res){
             res.send(JSON.stringify(info));
         }))
 });
-
 
 /**
  * Market info
