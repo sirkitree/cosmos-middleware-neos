@@ -58,7 +58,7 @@ app.get('/', function (req, res) {
   endpoints.push('/listtransactions - List of 100 transactions by latest. JSON');
   endpoints.push('/blocks/:height - Given a height, return the block info. JSON' );
   endpoints.push('/account/:account - Given an account address hash, return address info. JSON');
-  endpoints.push('market - Returns latest market information. JSON');
+  endpoints.push('/market - Returns latest market information. JSON');
 
   let output = endpoints.map(out => out);
 
@@ -69,10 +69,10 @@ app.get('/', function (req, res) {
  * Latest block height.
  */
 app.get('/latest', function (req, res) {
-  axios.get(RPC + '/status', { httpsAgent: agent })
+  axios.get(SGAPI + '/blocks?limit=1', { httpsAgent: agent })
     .then(function (response) {
       var latestBlockHeight;
-      latestBlockHeight = response.data.result.sync_info.latest_block_height;
+      latestBlockHeight = response.data.blocks[0].height;
       res.send(latestBlockHeight);
     })
 });
