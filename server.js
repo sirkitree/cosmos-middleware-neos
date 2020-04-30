@@ -575,19 +575,28 @@ app.get('/transactions', function (req, res) {
     let txs = response.data.transactions;
     // transations is an array
     txs.forEach(tx => {
+      // console.log(tx);
       let customResponse = {};
       customResponse.height = tx.height
       customResponse.hash = tx.hash;
       customResponse.ok = tx.ok; //true if valid, false if invalid tx
       customResponse.type = tx.messages[0].type;
-      customResponse.fee = tx.fees.amount[0].amount + ' ' + tx.fees.amount[0].denom + ' + ' + tx.fees.gas + ' gas';
+      if (typeof(tx.fees.amount[0]) !== 'undefined') {
+        customResponse.fee = tx.fees.amount[0].amount + ' ' + tx.fees.amount[0].denom + ' + ' + tx.fees.gas + ' gas';
+      } else {
+        customResponse.fee = 'No fee + ' + tx.fees.gas + ' gas';
+      }
       customResponse.time = tx.time;
-
+      
       switch (tx.messages[0].type) {
         case 'withdraw_delegator_reward':
           if (tx.messages[1]) {
             data = JSON.parse(tx.messages[1].data);
-            customResponse.value = data.amount.amount + ' ' + data.amount.denom;
+            if (typeof(data.amount) !== 'undefined') {
+              customResponse.value = data.amount.amount + ' ' + data.amount.denom;
+            } else {
+              console.log(data);
+            }
           } else {
             data = JSON.parse(tx.messages[0].data);
           }
@@ -596,7 +605,11 @@ app.get('/transactions', function (req, res) {
           break;
         case 'send':
           data = JSON.parse(tx.messages[0].data);
-          customResponse.value = data.amount[0].amount + ' ' + data.amount[0].denom;
+          if (typeof(data.amount[0]) !== 'undefined') {
+            customResponse.value = data.amount[0].amount + ' ' + data.amount[0].denom;
+          } else {
+            console.log(data);
+          }
           customResponse.to = data.to_address;
           customResponse.from = data.from_address;
           break;
