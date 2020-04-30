@@ -49,13 +49,10 @@ app.get('/', function (req, res) {
   endpoints.push('/consensus/voted_power - Consensus proposer voting power. STRING');
   endpoints.push('/validators/random - Returns a random validator. JSON');
   endpoints.push('/graph - Block time. JSON');
-  endpoints.push('/transactions/:tx - Given a transaction hash, return info about the transaction. JSON');
+  endpoints.push('/transactions - List of transactions by latest. JSON');
 
   // @todo: change ot /blocks
   endpoints.push('/listblocks - List of 50 block by latest height. JSON');
-
-  // @todo: change to /transactions
-  endpoints.push('/listtransactions - List of 100 transactions by latest. JSON');
   endpoints.push('/blocks/:height - Given a height, return the block info. JSON' );
   endpoints.push('/account/:account - Given an account address hash, return address info. JSON');
   endpoints.push('/market - Returns latest market information. JSON');
@@ -545,38 +542,69 @@ app.get('/graph', function (req, res) {
   })
 });
 
+
 /**
- * Get transaction info for given tx hash.
+ * Get list of transactions.
+ * - params: 
+ *   - limit
+ *   - offset 
+ *   - height
+ *   - hash
+ *   - sender
+ * 
+ * Note: where we get the data is dependant upon the tx type.
+ * Types are:
+ * - withdraw_delegator_reward / delegate
+ * - send
+ * 
+ * Desired data points:
+ * - type: transaction.messages[0].type
+ * - speed: (can't find anything like this)
+ * - from: transaction.messages[0].data.from_address
+ * - to: transaction.messages[0].data.to_address
+ * - value: transaction.messages[0].data.amount.amount + denom
+ * - fee: transaction.fees.amount[0].amount + denom
+ * - time: transaction.time
  */
-app.get('/transactions/:tx', function (req, res) {
-  let tx = req.params.tx;
-  axios.get(RPC + '/tx?hash=0x' + tx, { httpsAgent: agent })
-    .then(function (response) {
-      // So we get transaction height
-      let height = response.data.result.height
+app.get('/transactions', function (req, res) {
+  let uri = SGAPI + req._parsedUrl._raw;  
+  axios.get(uri, { httpsAgent: agent })
+  .then(function (response) {
+    let data = {};
+    let customResponses = [];
+    let txs = response.data.transactions;
+    // transations is an array
+    txs.forEach(tx => {
+      let customResponse = {};
+      customResponse.height = tx.height
+      customResponse.hash = tx.hash;
+      customResponse.ok = tx.ok; //true if valid, false if invalid tx
+      customResponse.type = tx.messages[0].type;
+      customResponse.fee = tx.fees.amount[0].amount + ' ' + tx.fees.amount[0].denom + ' + ' + tx.fees.gas + ' gas';
+      customResponse.time = tx.time;
 
-      // Now request data from transactions in SGAPI
-
-      axios.get(SGAPI + '/transaction/' + height + '/' + tx)
-        .then(function (response) {
-          let msgData = response.data.transaction.messages[0].data;
-          if (msgData) {
-            response.data.transaction.messages[0].data = JSON.parse(msgData);
+      switch (tx.messages[0].type) {
+        case 'withdraw_delegator_reward':
+          if (tx.messages[1]) {
+            data = JSON.parse(tx.messages[1].data);
+            customResponse.value = data.amount.amount + ' ' + data.amount.denom;
+          } else {
+            data = JSON.parse(tx.messages[0].data);
           }
-
-          let log = response.data.transaction.result.log;
-          console.log(typeof(response.data.transaction.result.log));
-          if (log) {
-            response.data.transaction.result.log = JSON.parse(log);
-          }
-
-          let logLog = response.data.transaction.result.log[0].log;
-          if (logLog) {
-            response.data.transaction.result.log[0].log = JSON.parse(logLog);
-          }
-          res.send(JSON.stringify(response.data));
-        });
+          customResponse.to = data.delegator_address;
+          customResponse.from = data.validator_address;
+          break;
+        case 'send':
+          data = JSON.parse(tx.messages[0].data);
+          customResponse.value = data.amount[0].amount + ' ' + data.amount[0].denom;
+          customResponse.to = data.to_address;
+          customResponse.from = data.from_address;
+          break;
+      }
+      customResponses.push(customResponse);
     });
+    res.send(customResponses);
+  })
 });
 
 /**
@@ -599,16 +627,6 @@ app.get('/listblocks', function (req, res) {
         }
         res.send(JSON.stringify(blocks));
       })
-  })
-});
-
-/**
- * Get list of transactions.
- */
-app.get('/listtransactions', function (req, res) {
-  axios.get(SGAPI + '/transactions?limit=100', { httpsAgent: agent })
-  .then(function (response) {
-    res.send(JSON.stringify(response.data.transactions));
   })
 });
 
